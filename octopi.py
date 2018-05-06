@@ -9,28 +9,29 @@ import os
 banner = "EASTER BUNNY'S FLUFFY WHITE COCK"
 start_up_banner = "CAESAR SALAD COCK"
 flushed = False
+TOGGLE = 6969
+NFQUEUE_TABLE = "iptables -A INPUT -j NFQUEUE --queue-num 1"
+PORTS = []
 
 def spoof_scan(packet):
     global flushed  
-    if flushed:
+    try:
         pkt = IP(packet.get_payload())
-        print "HERE"
-        # pkt.show()
-        if pkt.haslayer(TCP) and pkt.haslayer(Raw):
-            raw_bytes = pkt["Raw"].load.decode("utf-8")
-            if start_up_banner in raw_bytes:
-                flushed = False
-                # os.system("iptables -A INPUT -j NFQUEUE --queue-num 1")
-                print "turned back on"
+        if flushed:
+            if pkt.haslayer(TCP) and pkt.haslayer(Raw):
+                if pkt["TCP"].dport == TOGGLE :
+                    raw_bytes = pkt["Raw"].load.decode("utf-8")
+                    if start_up_banner in raw_bytes:
+                        flushed = False
+                        os.system(NFQUEUE_TABLE)
+                        print "turned back on"
+                        packet.accept()
+                        return
+
+            else:
                 packet.accept()
                 return
 
-        else:
-            packet.accept()
-            return
-
-    try:
-        pkt = IP(packet.get_payload())
 
         # if it's not a TCP packet, let it through
         if not pkt.haslayer(TCP):
@@ -58,12 +59,13 @@ def spoof_scan(packet):
                 packet.accept()
                 return
             else:
-                raw_bytes = pkt["Raw"].load.decode("utf-8")
-                if banner in raw_bytes:
-                    packet.drop()
-                    flushed = True
-                    print "turned it off"
-                    # os.system("iptables -F")
+                if pkt["TCP"].dport == TOGGLE:
+                    raw_bytes = pkt["Raw"].load.decode("utf-8")
+                    if banner in raw_bytes:
+                        packet.drop()
+                        flushed = True
+                        print "turned it off"
+                        os.system("iptables -F")
 
 
         else:
@@ -71,7 +73,7 @@ def spoof_scan(packet):
         
 
     except Exception as e:
-        # print e
+        print e
         print "ERROR"
 
 if __name__ == "__main__":
@@ -82,14 +84,12 @@ if __name__ == "__main__":
 
 
     try:
-        # os.system("iptables -A OUTPUT -p tcp --sport 1:65535 --tcp-flags RST RST -j DROP")
-        os.system("iptables -A INPUT -p tcp -j NFQUEUE --queue-num 1")
-        # os.system("iptables -D OUTPUT -p tcp --sport 1:65535 --tcp-flags RST RST -j DROP")
+        os.system(NFQUEUE_TABLE)
         print "UPDATED IPTABLES..."
 
         nfqueue = NetfilterQueue()
-        # 1 is iptables rule queue number, filter_get_requests is callback function
         print "CREATED NFQUEUE..."
+        # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
         nfqueue.run()
 
