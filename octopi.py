@@ -19,18 +19,19 @@ def spoof_scan(packet):
         pkt = IP(packet.get_payload())
         if flushed:
             if pkt.haslayer(TCP) and pkt.haslayer(Raw):
-                if pkt["TCP"].dport == TOGGLE :
+                tcp_flag = pkt.sprintf("%TCP.flags%")
+                if pkt["TCP"].dport == TOGGLE and tcp_flag == "PA":
                     raw_bytes = pkt["Raw"].load.decode("utf-8")
                     if start_up_banner in raw_bytes:
                         flushed = False
                         os.system(NFQUEUE_TABLE)
                         print "turned back on"
-                        packet.accept()
+                        packet.drop()
                         return
 
-            else:
-                packet.accept()
-                return
+            # by default just accept all packets if not the toggle packet
+            packet.accept()
+            return
 
 
         # if it's not a TCP packet, let it through
@@ -42,15 +43,15 @@ def spoof_scan(packet):
         tcp_flag = pkt.sprintf("%TCP.flags%")
         if tcp_flag == "S":
             # uncomment to set specific ports to allow through
-            # if pkt["TCP"].dport == 8000:
-            #     packet.accept()
-            #     return
+            if pkt["TCP"].dport in PORTS:
+                packet.accept()
+                return
             # spoof the fake reply
             ret_pkt = IP(src=pkt["IP"].dst, dst=pkt["IP"].src, ttl=pkt["IP"].ttl - 1)/ \
                     TCP(dport=pkt["TCP"].sport, sport=pkt["TCP"].dport, seq=1234, ack=pkt["TCP"].seq + 1, flags="SA")
 
             packet.drop()
-            print "Scan:\t%d" % ret_pkt["TCP"].sport
+            print "Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
             send(ret_pkt, verbose=False)
 
         # kill switch
@@ -65,7 +66,6 @@ def spoof_scan(packet):
                         packet.drop()
                         flushed = True
                         print "turned it off"
-                        os.system("iptables -F")
 
 
         else:
