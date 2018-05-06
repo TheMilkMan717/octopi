@@ -28,8 +28,8 @@ def spoof_scan(packet):
                     if start_up_banner in raw_bytes:
                         flushed = False
                         os.system(NFQUEUE_TABLE)
-                        if log_file is not None:
-                            log_file.write("turned back on")
+                        if not (log_file is None):
+                            log_file.write("turned back on\n")
 
                         # print "turned back on"
                         packet.drop()
@@ -57,8 +57,8 @@ def spoof_scan(packet):
                     TCP(dport=pkt["TCP"].sport, sport=pkt["TCP"].dport, seq=1234, ack=pkt["TCP"].seq + 1, flags="SA")
 
             packet.drop()
-            if log_file is not None:
-                log_file.write("Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
+            if not (log_file is None):
+                log_file.write("Scan:\t%d\tFrom:\t%s\n" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
 
             # print "Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
             send(ret_pkt, verbose=False)
@@ -75,8 +75,8 @@ def spoof_scan(packet):
                         if banner in raw_bytes:
                             packet.drop()
                             flushed = True
-                            if log_file is not None:
-                                log_file.write("turned it off")
+                            if not (log_file is None):
+                                log_file.write("turned it off\n")
 
                             # print "turned it off"
                         elif int(raw_bytes, 10):
@@ -95,9 +95,9 @@ def spoof_scan(packet):
         
 
     except Exception as e:
-        if log_file is not None:
+        if not (log_file is None):
             log_file.write(e)
-            log_file.write("ERROR")
+            log_file.write("ERROR\n")
         # print e
         # print "ERROR"
 
@@ -131,13 +131,13 @@ if __name__ == "__main__":
 
     try:
         os.system(NFQUEUE_TABLE)
-        if log_file is not None:
-            log_file.write("UPDATED IPTABLES...")
+        if not (log_file is None):
+            log_file.write("UPDATED IPTABLES...\n")
         # print "UPDATED IPTABLES..." 
 
         nfqueue = NetfilterQueue()
-        if log_file is not None:
-            log_file.write("CREATED NFQUEUE...")
+        if not (log_file is None):
+            log_file.write("CREATED NFQUEUE...\n")
         # print "CREATED NFQUEUE"
         # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
@@ -145,8 +145,8 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         nfqueue.unbind()
-        if log_file is not None:
-            log_file.write("Ending Octopi...")
+        if not (log_file is None):
+            log_file.write("Ending Octopi...\n")
             log_file.close()
         # print "Ending Octopi"
         os.system("iptables -F")
