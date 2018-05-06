@@ -79,8 +79,23 @@ def spoof_scan(packet):
 if __name__ == "__main__":
     global nfqueue
     parser = argparse.ArgumentParser()
-    # parser.add_argument("", type=str)
+    parser.add_argument("--rangeL", type=int)
+    parser.add_argument("--rangeH", type=int)
+    parser.add_argument("--ports", type=int, nargs="+")
+
     args = parser.parse_args()
+
+    # add special exception for specialty ports
+    ports_to_add = args.ports
+    if ports_to_add is not None:
+        for p in ports_to_add:
+            PORTS.append(p)
+
+    low = args.rangeL
+    high = args.rangeH
+    if (low is not None) and (high is not None):
+        for p in range(low, high + 1):
+            PORTS.append(p)
 
 
     try:
