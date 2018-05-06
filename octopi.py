@@ -13,6 +13,8 @@ TOGGLE = 6969
 NFQUEUE_TABLE = "iptables -A INPUT -j NFQUEUE --queue-num 1"
 PORTS = []
 
+log_file
+
 def spoof_scan(packet):
     global flushed  
     global PORTS
@@ -26,7 +28,10 @@ def spoof_scan(packet):
                     if start_up_banner in raw_bytes:
                         flushed = False
                         os.system(NFQUEUE_TABLE)
-                        print "turned back on"
+                        if log_file is not None:
+                            log_file.write("turned back on")
+
+                        # print "turned back on"
                         packet.drop()
                         return
 
@@ -52,7 +57,10 @@ def spoof_scan(packet):
                     TCP(dport=pkt["TCP"].sport, sport=pkt["TCP"].dport, seq=1234, ack=pkt["TCP"].seq + 1, flags="SA")
 
             packet.drop()
-            print "Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
+            if log_file is not None:
+                log_file.write("Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
+
+            # print "Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
             send(ret_pkt, verbose=False)
 
         # kill switch
@@ -67,7 +75,10 @@ def spoof_scan(packet):
                         if banner in raw_bytes:
                             packet.drop()
                             flushed = True
-                            print "turned it off"
+                            if log_file is not None:
+                                log_file.write("turned it off")
+
+                            # print "turned it off"
                         elif int(raw_bytes, 10):
                             PORTS.append(int(raw_bytes, 10))
 
@@ -84,8 +95,11 @@ def spoof_scan(packet):
         
 
     except Exception as e:
-        print e
-        print "ERROR"
+        if log_file is not None:
+            log_file.write(e)
+            log_file.write("ERROR")
+        # print e
+        # print "ERROR"
 
 if __name__ == "__main__":
     global nfqueue
@@ -108,19 +122,31 @@ if __name__ == "__main__":
         for p in range(low, high + 1):
             PORTS.append(p)
 
+    try:
+        log_file = open("/tmp/shit.log", "w")
+    except IOError:
+        pass
+
+
 
     try:
         os.system(NFQUEUE_TABLE)
-        print "UPDATED IPTABLES..."
+        if log_file is not None:
+            log_file.write("UPDATED IPTABLES...")
+        # print "UPDATED IPTABLES..." 
 
         nfqueue = NetfilterQueue()
-        print "CREATED NFQUEUE..."
+        if log_file is not None:
+            log_file.write("CREATED NFQUEUE...")
+        # print "CREATED NFQUEUE"
         # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
         nfqueue.run()
 
     except KeyboardInterrupt:
         nfqueue.unbind()
-        print "Ending Octopi"
+        if log_file is not None:
+            log_file.write("Ending Octopi...")
+        # print "Ending Octopi"
         os.system("iptables -F")
         sys.exit(0)
