@@ -13,7 +13,7 @@ TOGGLE = 6969
 NFQUEUE_TABLE = "iptables -A INPUT -j NFQUEUE --queue-num 1"
 PORTS = []
 
-log_file
+log_file = None
 
 def spoof_scan(packet):
     global flushed  
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     try:
         log_file = open("/tmp/shit.log", "w")
     except IOError:
-        pass
+        log_file = None
 
 
 
@@ -147,6 +147,7 @@ if __name__ == "__main__":
         nfqueue.unbind()
         if log_file is not None:
             log_file.write("Ending Octopi...")
+            log_file.close()
         # print "Ending Octopi"
         os.system("iptables -F")
         sys.exit(0)
