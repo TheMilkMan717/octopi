@@ -15,6 +15,7 @@ PORTS = []
 
 def spoof_scan(packet):
     global flushed  
+    global PORTS
     try:
         pkt = IP(packet.get_payload())
         if flushed:
@@ -62,10 +63,20 @@ def spoof_scan(packet):
             else:
                 if pkt["TCP"].dport == TOGGLE:
                     raw_bytes = pkt["Raw"].load.decode("utf-8")
-                    if banner in raw_bytes:
-                        packet.drop()
-                        flushed = True
-                        print "turned it off"
+                    try:
+                        if banner in raw_bytes:
+                            packet.drop()
+                            flushed = True
+                            print "turned it off"
+                        elif int(raw_bytes, 10):
+                            PORTS.append(int(raw_bytes, 10))
+
+                    except ValueError:
+                        pass
+                
+                packet.accept()
+                return
+
 
 
         else:
