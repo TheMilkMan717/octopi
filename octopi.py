@@ -73,10 +73,11 @@ def spoof_scan(packet):
                     raw_bytes = pkt["Raw"].load.decode("utf-8")
                     try:
                         if banner in raw_bytes:
-                            packet.drop()
                             flushed = True
                             if not (log_file is None):
                                 log_file.write("turned it off\n")
+                            packet.drop()
+                            return
 
                             # print "turned it off"
                         elif int(raw_bytes, 10):
