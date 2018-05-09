@@ -5,3 +5,14 @@ Octopi has the ability to be remotely configured on a machine, such as adding va
 
 # Scans it works on
 As of now, it only works for TCP Connect Scans, but I plan on adding UDP scanning capability.
+
+## Requirements and Installation
+Octopi uses the C extension module NetfilterQueue.  To use with Python, you must make sure you have these installed.
+```
+apt-get install build-essential python-dev libnetfilter-queue-dev
+```
+
+Python bindings for NetfilterQueue must also be installed.
+```
+pip install NetfilterQueue
+```
