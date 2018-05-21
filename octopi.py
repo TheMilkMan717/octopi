@@ -13,7 +13,14 @@ TOGGLE = 6969
 NFQUEUE_TABLE = "iptables -A INPUT -j NFQUEUE --queue-num 1"
 PORTS = []
 
+VERBOSE = False
+
 log_file = None
+
+def vprint(msg):
+    if VERBOSE:
+        print msg
+    
 
 def spoof_scan(packet):
     global flushed  
@@ -31,7 +38,7 @@ def spoof_scan(packet):
                         if not (log_file is None):
                             log_file.write("turned back on\n")
 
-                        # print "turned back on"
+                        print "Octopi turned back on"
                         packet.drop()
                         return
 
@@ -60,7 +67,7 @@ def spoof_scan(packet):
             if not (log_file is None):
                 log_file.write("Scan:\t%d\tFrom:\t%s\n" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
 
-            # print "Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst)
+            vprint("Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
             send(ret_pkt, verbose=False)
 
         # kill switch
@@ -79,7 +86,7 @@ def spoof_scan(packet):
                             packet.drop()
                             return
 
-                            # print "turned it off"
+                            print "Octopi has suspended"
                         elif int(raw_bytes, 10):
                             PORTS.append(int(raw_bytes, 10))
 
@@ -99,15 +106,17 @@ def spoof_scan(packet):
         if not (log_file is None):
             log_file.write(e)
             log_file.write("ERROR\n")
-        # print e
-        # print "ERROR"
+        vprint(e)
 
 if __name__ == "__main__":
     global nfqueue
+    # global VERBOSE
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--rangeL", type=int)
     parser.add_argument("--rangeH", type=int)
     parser.add_argument("--ports", type=int, nargs="+")
+    parser.add_argument("-v", default=False, action="store_true", help="verbose mode")
 
     args = parser.parse_args()
 
@@ -117,11 +126,17 @@ if __name__ == "__main__":
         for p in ports_to_add:
             PORTS.append(p)
 
+    # add a range of ports to allow through
     low = args.rangeL
     high = args.rangeH
     if (low is not None) and (high is not None):
         for p in range(low, high + 1):
             PORTS.append(p)
+
+    # turn on verbose mode
+    if args.v:
+        print "Running in Verbose mode"
+        VERBOSE = True
 
     try:
         log_file = open("/tmp/shit.log", "w")
@@ -132,16 +147,19 @@ if __name__ == "__main__":
 
     try:
         os.system(NFQUEUE_TABLE)
+
         if not (log_file is None):
             log_file.write("UPDATED IPTABLES...\n")
-        # print "UPDATED IPTABLES..." 
+
+        print "UPDATED IPTABLES..." 
 
         nfqueue = NetfilterQueue()
         if not (log_file is None):
             log_file.write("CREATED NFQUEUE...\n")
-        # print "CREATED NFQUEUE"
+        print "CREATED NFQUEUE"
         # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
+        print "Beginning Octopi"
         nfqueue.run()
 
     except KeyboardInterrupt:
@@ -149,6 +167,6 @@ if __name__ == "__main__":
         if not (log_file is None):
             log_file.write("Ending Octopi...\n")
             log_file.close()
-        # print "Ending Octopi"
+        print "Ending Octopi"
         os.system("iptables -F")
         sys.exit(0)
