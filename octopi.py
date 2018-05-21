@@ -14,7 +14,6 @@ NFQUEUE_TABLE = "iptables -A INPUT -j NFQUEUE --queue-num 1"
 PORTS = []
 
 VERBOSE = False
-
 log_file = None
 
 def vprint(msg):
@@ -117,6 +116,7 @@ if __name__ == "__main__":
     parser.add_argument("--rangeH", type=int)
     parser.add_argument("--ports", type=int, nargs="+")
     parser.add_argument("-v", default=False, action="store_true", help="verbose mode")
+    parser.add_argument("--log", type=str, default="/tmp/octopi.log", help="specify a log file, default is /tmp/octopi.log")
 
     args = parser.parse_args()
 
@@ -138,8 +138,10 @@ if __name__ == "__main__":
         print "Running in Verbose mode"
         VERBOSE = True
 
+    LOG_FILE_NAME = args.log
+
     try:
-        log_file = open("/tmp/shit.log", "w")
+        log_file = open(LOG_FILE_NAME, "w")
     except IOError:
         log_file = None
 
@@ -160,6 +162,7 @@ if __name__ == "__main__":
         # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
         print "Beginning Octopi"
+        vprint("Logging to %s" % LOG_FILE_NAME)
         nfqueue.run()
 
     except KeyboardInterrupt:
