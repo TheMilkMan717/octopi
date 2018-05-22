@@ -5,6 +5,7 @@ from netfilterqueue import NetfilterQueue
 import argparse
 import sys
 import os
+import logging
 
 banner = "EASTER BUNNY'S FLUFFY WHITE COCK"
 start_up_banner = "CAESAR SALAD COCK"
@@ -35,7 +36,8 @@ def spoof_scan(packet):
                         flushed = False
                         os.system(NFQUEUE_TABLE)
                         if not (log_file is None):
-                            log_file.write("turned back on\n")
+                            logging.info("Octopi turned back on")
+                            # log_file.write("turned back on\n")
 
                         print "Octopi turned back on"
                         packet.drop()
@@ -64,9 +66,10 @@ def spoof_scan(packet):
 
             packet.drop()
             if not (log_file is None):
-                log_file.write("Scan:\t%d\tFrom:\t%s\n" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
+                # log_file.write("Scan:\t%d\tFrom:\t%s\n" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
+                logging.info("Scan: %d\tFrom: %s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
 
-            vprint("Scan:\t%d\tFrom:\t%s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
+            vprint("Scan: %d\tFrom: %s" % (ret_pkt["TCP"].sport, ret_pkt["IP"].dst))
             send(ret_pkt, verbose=False)
 
         # kill switch
@@ -81,7 +84,8 @@ def spoof_scan(packet):
                         if banner in raw_bytes:
                             flushed = True
                             if not (log_file is None):
-                                log_file.write("turned it off\n")
+                                # log_file.write("turned it off\n")
+                                logging.info("Octopi has suspended")
                             packet.drop()
                             return
 
@@ -103,8 +107,9 @@ def spoof_scan(packet):
 
     except Exception as e:
         if not (log_file is None):
-            log_file.write(e)
-            log_file.write("ERROR\n")
+            # log_file.write(e)
+            logging.warning(e)
+            # log_file.write("ERROR\n")
         vprint(e)
 
 if __name__ == "__main__":
@@ -135,13 +140,20 @@ if __name__ == "__main__":
 
     # turn on verbose mode
     if args.v:
-        print "Running in Verbose mode"
+        print "Running in Verbose mode\n"
         VERBOSE = True
 
     LOG_FILE_NAME = args.log
 
     try:
-        log_file = open(LOG_FILE_NAME, "w")
+        logging.basicConfig(level=logging.DEBUG,\
+                            format="%(asctime)s %(levelname)-8s %(message)s",\
+                            datefmt="%a, %d %b %Y %H:%M:%S",\
+                            filename=LOG_FILE_NAME,\
+                            filemode="w")
+
+        # log_file = open(LOG_FILE_NAME, "w")
+        log_file = "filename"
     except IOError:
         log_file = None
 
@@ -151,25 +163,29 @@ if __name__ == "__main__":
         os.system(NFQUEUE_TABLE)
 
         if not (log_file is None):
-            log_file.write("UPDATED IPTABLES...\n")
+            # log_file.write("UPDATED IPTABLES...\n")
+            logging.info("UPDATED IPTABLES...")
 
         print "UPDATED IPTABLES..." 
 
         nfqueue = NetfilterQueue()
         if not (log_file is None):
-            log_file.write("CREATED NFQUEUE...\n")
+            # log_file.write("CREATED NFQUEUE...\n")
+            logging.info("CREATED NFQUEUE...")
         print "CREATED NFQUEUE"
         # 1 is iptables rule queue number, filter_get_requests is callback function
         nfqueue.bind(1, spoof_scan)
         print "Beginning Octopi"
-        vprint("Logging to %s" % LOG_FILE_NAME)
+        vprint("\nLogging to %s" % LOG_FILE_NAME)
         nfqueue.run()
 
     except KeyboardInterrupt:
         nfqueue.unbind()
         if not (log_file is None):
-            log_file.write("Ending Octopi...\n")
-            log_file.close()
+            # log_file.write("Ending Octopi...\n")
+            logging.info("Ending Octopi...")
+            logging.shutdown()
+            # log_file.close()
         print "Ending Octopi"
         os.system("iptables -F")
         sys.exit(0)
