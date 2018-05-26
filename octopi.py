@@ -27,6 +27,7 @@ def spoof_scan(packet):
     global PORTS
     # TODO: replace hasLayer() with pktType in pkt
     # TODO: rework the logging for UDP scans for user to know the type of scan being done
+    # TODO: Whitelist scans by IP address so that UDP scanning is not confused with valid DNS servers
     try:
         pkt = IP(packet.get_payload())
         if flushed:
@@ -52,6 +53,10 @@ def spoof_scan(packet):
 
         if UDP in pkt:
             if pkt["UDP"].dport in PORTS:
+                packet.accept()
+                return
+            # used for weird UDP traffic from localhost
+            elif pkt["IP"].src == "127.0.0.1":
                 packet.accept()
                 return
             else:
