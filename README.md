@@ -16,7 +16,7 @@ Python bindings for NetfilterQueue must also be installed.
 ```
 pip install NetfilterQueue
 ```
-*note* NetfilterQueue only seems to work on Python 2.7 as of now
+*NetfilterQueue only seems to work on Python 2.7 as of now*
 
 Scapy module must be installed
 ```
