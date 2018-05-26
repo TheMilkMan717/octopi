@@ -25,6 +25,7 @@ def vprint(msg):
 def spoof_scan(packet):
     global flushed  
     global PORTS
+    # TODO: replace hasLayer() with pktType in pkt
     try:
         pkt = IP(packet.get_payload())
         if flushed:
@@ -47,6 +48,16 @@ def spoof_scan(packet):
             packet.accept()
             return
 
+
+        if UDP in pkt:
+            if pkt["UDP"].dport in PORTS:
+                packet.accept()
+                return
+            else:
+                logging.info("Scan: %d\tFrom: %s" % (pkt["UDP"].dport, pkt["IP"].src))
+                vprint("Scan: %d\tFrom: %s" % (pkt["UDP"].dport, pkt["IP"].src))
+                packet.drop()
+                return
 
         # if it's not a TCP packet, let it through
         if not pkt.haslayer(TCP):
