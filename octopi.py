@@ -26,6 +26,7 @@ def spoof_scan(packet):
     global flushed  
     global PORTS
     # TODO: replace hasLayer() with pktType in pkt
+    # TODO: rework the logging for UDP scans for user to know the type of scan being done
     try:
         pkt = IP(packet.get_payload())
         if flushed:
